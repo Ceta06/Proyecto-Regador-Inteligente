@@ -23,7 +23,7 @@
   unsigned char flowsensor = 2; // Sensor Input                           amarillo
   unsigned long currentTime;
   unsigned long cloopTime;
-
+  String Dato="";
   void flow () // Interrupt function
   {
     flow_frequency++;
@@ -42,13 +42,12 @@
     pinMode(PinHum1,INPUT);
     pinMode(PinHum2, INPUT);
     delay(2000);
-    
     digitalWrite(flowsensor, HIGH); // Optional Internal Pull-Up
-    attachInterrupt(0, flow, RISING); // Setup Interrupt
-    sei(); // Enable interrupts
+   // attachInterrupt(0, flow, RISING); // Setup Interrupt
+   // sei(); // Enable interrupts
     currentTime = millis();
     cloopTime = currentTime;
-                                   //Estado Inicial de MEF (todo apagado)
+                        //Estado Inicial de MEF (todo apagado)
     digitalWrite(PinB, LOW);
     digitalWrite(PinValve1, LOW);
     digitalWrite(PinValve2, LOW);
@@ -71,44 +70,43 @@
     digitalWrite(pin, LOW);   // Aplicamos 0v al interruptor
   }
 
-  int Intensidad_Luz(int pin) {
+  String Intensidad_Luz(int pin) {
   //Serial.println("Welcome to TechPonder LDR Tutorial");
   int sensorValue = 0; // variable to store the value coming from the sensor
   sensorValue = analogRead(pin);
   // if (sensorValue < 880){ //4.29 volts 
-
   // }
   // delay 10ms to let the ADC recover:
-    delay(10);
-  return sensorValue;
-  }
+  delay(1);
+  // SendData(sensorValue);
+  String thisString = String(sensorValue);
+    return thisString;
+}
 
-  int Intensidad_Temp(int pin) {
-  float tempC=0;
+String Intensidad_Temp(int pin) { //obtenemos el valor del ADC
+  int tempC=0;
   tempC = analogRead(pin); 
-      // Convierte el valor a temperatura
-      tempC = (tempC * 100.0)/1024.0; 
-      // delay 10ms to let the ADC recover:
-    delay(10);
-    return tempC;
-  }
+  delay(1);
+  String thisString = String(tempC);
+    return thisString;
+    }
 
-  float Flujo_Agua(int pin) {
-    currentTime = millis();
+float Flujo_Agua(int pin) {
+  currentTime = millis();
     // Every second, calculate and print litres/hour
-    if (currentTime >= (cloopTime + 1000))
-    {
+  if (currentTime >= (cloopTime + 1000))
+  {
       cloopTime = currentTime; // Updates cloopTime
       // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
       l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
       flow_frequency = 0; // Reset Counter
-     
+
     }
     return l_hour;
   }
 
- 
-  int Humedad(int pin) {
+
+  String Humedad(int pin) {
     int Valor=0;
     //Serial.print("Sensor de Humedad valor:");
     Valor = analogRead(pin);
@@ -120,63 +118,72 @@
     //     if (Valor > 700);
     //       // Serial.println(" Seco, necesitas regar");
     // delay 10ms to let the ADC recover:
-    delay(10);
-    return Valor;
+    delay(1);
+    // Serial.println("Humedad");
+    // Serial.print(Valor);
+    String thisString = String(Valor);
+    return thisString;
   }
 
 
-void SendData(int dato){
-  digitalWrite(led, HIGH);    // sets the LED off
-  Serial1.print(dato);
-  Serial1.print('\n');
-  delay(20);  
-  digitalWrite(led, LOW);   // sets the LED on            
-  
+
+  void blink(){
+digitalWrite(led, HIGH);   // Aplicamos 5v al interruptor
+delay (5);
+digitalWrite(led, LOW);   // Aplicamos 5v al interruptor
+
 }
+
+
 int ReceiveData(){
-   while (Serial1.available() > 0) {
-    // look for the next valid integer in the incoming serial stream:
-    int data = Serial1.parseInt();
-    // look for the newline. That's the end of your
-    // sentence:
-    if (Serial1.read() == '\n') {
-    //Serial.println("DATO recibido:"); 
-     // Serial.println(red);
-     return data;
-    }
+  int incomingByte=0;
+  blink(); 
+ if (Serial.available() > 0) {             
+  incomingByte=Serial.parseInt();      
   }
-  return 0;
+  Serial.flush();
+  return incomingByte;
 }
 
-void AdministrarValvulas(){
+
+void SendData(String dato){
+  Serial1.println(dato);//enviamos un byte
+  blink();  
+}
+
+// int ReceiveData(){
+//    while (Serial1.available() > 0) {
+//     // look for the next valid integer in the incoming serial stream:
+//     int data = Serial1.parseInt();
+//     // look for the newline. That's the end of your
+//     // sentence:
+//     if (Serial1.read() == '\n') {
+//     //Serial.println("DATO recibido:"); 
+//      // Serial.println(red);
+//      return data;
+//     }
+//   }
+//   return 0;
+// }
+
+void AdministrarValvulas(){ //funcion para abrir y cerrar valvulas dependiento del valor recibido en el UART
   int option=0;
 
-    Cierra_Valvula(PinValve1);
-    Cierra_Valvula(PinValve2);
-    Cierra_Valvula(PinB);
-    
-
-  digitalWrite(led, HIGH);    // sets the LED off
-  //Serial1.println("Introduzca Valvula");
-  delay(200);  
-  digitalWrite(led, LOW);   // sets the LED on     
-  
   option=ReceiveData();
-  
+  Serial.println(option);
   switch (option){
     case 1:
     Abre_Valvula(PinValve1);
-     break;
+    break;
     case 2:
     Cierra_Valvula(PinValve1);
-     break;
-     case 3:
-     Abre_Valvula(PinValve2);
-     break;
+    break;
+    case 3:
+    Abre_Valvula(PinValve2);
+    break;
     case 4:
     Cierra_Valvula(PinValve2);
-     break;
-
+    break;
     default:
     AdministrarValvulas();
     break;
@@ -186,63 +193,41 @@ void AdministrarValvulas(){
 }
 
 
-void test(){
-    int var=0                                                                                    ;
-    //int valvula=0;
-    int data=0;
-    
-    var=ReceiveData();
-
-   // Serial.println(var);
-    if (var<Available_options){
-switch (var) {
+  ////////////////////////////////main /////////////////////////////////
+  void loop() {
+ int var=0 ;                                                                                  ;
+  var=ReceiveData();
+  if (var<Available_options || var==0){
+    switch (var) {
     case 1://Abre valvula 1
-     Abre_Valvula(PinValve1);
+    AdministrarValvulas();
+    break;
+      case 2://'5'://Sensar Temperatura
+      SendData(Humedad(PinHum1));
       break;
-    case 2://'2'://Sensar Humedad
-     Cierra_Valvula(PinValve1);
+      case 3://'5'://Sensar Temperatura
+      SendData(Humedad(PinHum2));
       break;
-    case 3://'3'://Sensar Luz
-     Abre_Valvula(PinValve2);
+      case 4://'5'://Sensar Temperatura
+      SendData(Intensidad_Luz(PinLuz));
       break;
-    case 4://'4'://Sensar Temperatura
-      Cierra_Valvula(PinValve2);
+      case 5://'5'://Sensar Temperatura
+      SendData(Intensidad_Temp(PinTemp));
       break;
-    case 5://'5'://Sensar Temperatura
-     Humedad(PinHum1);
+     // case 9://'5'://Sensar flujo
+      //Flujo_Agua(PinFLujo);
+      //break;
+      default:
       break;
-     
-      case 6://'5'://Sensar Temperatura
-       Humedad(PinHum2);
-      break;
-      case 7://'5'://Sensar Temperatura
-      Intensidad_Luz(PinLuz);
-      break;
+    }
 
-      case 8://'5'://Sensar Temperatura
-      Intensidad_Temp(PinTemp);
-      break;
-
-
-      case 9://'5'://Sensar Temperatura
-      Flujo_Agua(PinFLujo);
-      break;
-  }
-
-    }else{
-      SendData(70); //codigo 70 significa seleccion invalida
+  }else{
+      SendData ("551"); //codigo 70 significa seleccion invalida
     }
     
 
-  
-
-}
-
-  ////////////////////////////////main /////////////////////////////////
-  void loop() {
- test();
-  
-  }
+//el tiempo real se penso para aplicarse a una cantidad cosiderable como estos sensores
+ }
 
 
 
