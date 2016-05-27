@@ -226,7 +226,7 @@ void AdministrarValvulas(){ //funcion para abrir y cerrar valvulas dependiento d
     }
     
 
-//el tiempo real se penso para aplicarse a una cantidad cosiderable como estos sensores
+//Solo se envian los datos solicitados
  }
 
 
